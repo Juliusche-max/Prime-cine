@@ -11,7 +11,7 @@ export async function getActivePlans() {
   return data;
 }
 
-export async function getMyCurrentSubscription() {
+export async function getMyCurrentSubscription(): Promise<any> {
   try {
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
@@ -25,7 +25,7 @@ export async function getMyCurrentSubscription() {
       .limit(1)
       .maybeSingle();
 
-    return data;
+    return data as any;
   } catch {
     return null;
   }
@@ -95,4 +95,4 @@ export async function getTransactionById(id: string) {
   } catch {
     return null;
   }
-}
+          }
