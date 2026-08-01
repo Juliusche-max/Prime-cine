@@ -17,15 +17,25 @@ export async function POST(req: NextRequest) {
   }
 
   const externalId: string | undefined = body?.externalId;
-  if (!externalId) return NextResponse.json({ error: "Missing externalId" }, { status: 400 });
+  if (!externalId) {
+    return NextResponse.json({ error: "Missing externalId" }, { status: 400 });
+  }
 
   try {
-    // We stored MTN's own referenceId in payment_transactions.provider_reference
-    // at initiation time; re-check status against MTN directly using it.
     const { createAdminClient } = await import("@/lib/supabase/admin-client");
     const supabase = createAdminClient();
-    const { data: tx } = await supabase.from("payment_transactions").select("*").eq("id", externalId).single();
-    if (!tx || !tx.provider_reference) return NextResponse.json({ error: "Unknown transaction" }, { status: 404 });
+
+    const { data } = await supabase
+      .from("payment_transactions")
+      .select("id, provider_reference")
+      .eq("id", externalId)
+      .single();
+
+    const tx = data as { id: string; provider_reference: string | null } | null;
+
+    if (!tx || !tx.provider_reference) {
+      return NextResponse.json({ error: "Unknown transaction" }, { status: 404 });
+    }
 
     const status = await getMomoTransactionStatus(tx.provider_reference);
 
