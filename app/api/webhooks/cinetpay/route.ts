@@ -1,4 +1,3 @@
-@@ -1,42 +1,2 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCardPaymentStatus } from "@/lib/payments/cinetpay";
 import { finalizeSuccessfulPayment, markPaymentFailed } from "@/lib/payments/finalize";
@@ -18,15 +17,31 @@ export async function POST(req: NextRequest) {
     transactionId = body.cpm_trans_id ?? body.transaction_id;
   } else {
     const form = await req.formData();
-    transactionId = form.get("cpm_trans_id")?.toString() ?? form.get("transaction_id")?.toString();
+    transactionId =
+      form.get("cpm_trans_id")?.toString() ??
+      form.get("transaction_id")?.toString();
   }
 
-  if (!transactionId) return NextResponse.json({ error: "Missing transaction_id" }, { status: 400 });
+  if (!transactionId) {
+    return NextResponse.json({ error: "Missing transaction_id" }, { status: 400 });
+  }
 
   try {
     const supabase = createAdminClient();
-    const { data: tx } = await supabase.from("payment_transactions").select("*").eq("id", transactionId).single();
-    if (!tx) return NextResponse.json({ error: "Unknown transaction" }, { status: 404 });
+
+    // Explicit select + type assertion because payment_transactions
+    // is not yet in database.types.ts
+    const { data } = await supabase
+      .from("payment_transactions")
+      .select("id, status, provider_reference")
+      .eq("id", transactionId)
+      .single();
+
+    const tx = data as { id: string; status: string; provider_reference: string | null } | null;
+
+    if (!tx) {
+      return NextResponse.json({ error: "Unknown transaction" }, { status: 404 });
+    }
 
     const status = await getCardPaymentStatus(tx.id);
 
@@ -41,5 +56,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
-const { data: tx } = await supabase.from("payment_transactions").select("*")...
-const status = await getCardPaymentStatus(tx.id);  // ← Property 'id' does not exist
