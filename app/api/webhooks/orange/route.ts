@@ -24,15 +24,29 @@ export async function POST(req: NextRequest) {
     payToken = form.get("pay_token")?.toString();
   }
 
-  if (!orderId) return NextResponse.json({ error: "Missing order_id" }, { status: 400 });
+  if (!orderId) {
+    return NextResponse.json({ error: "Missing order_id" }, { status: 400 });
+  }
 
   try {
     const supabase = createAdminClient();
-    const { data: tx } = await supabase.from("payment_transactions").select("*").eq("id", orderId).single();
-    if (!tx) return NextResponse.json({ error: "Unknown transaction" }, { status: 404 });
+
+    const { data } = await supabase
+      .from("payment_transactions")
+      .select("id, provider_reference")
+      .eq("id", orderId)
+      .single();
+
+    const tx = data as { id: string; provider_reference: string | null } | null;
+
+    if (!tx) {
+      return NextResponse.json({ error: "Unknown transaction" }, { status: 404 });
+    }
 
     const reference = payToken ?? tx.provider_reference;
-    if (!reference) return NextResponse.json({ error: "Missing pay_token" }, { status: 400 });
+    if (!reference) {
+      return NextResponse.json({ error: "Missing pay_token" }, { status: 400 });
+    }
 
     const status = await getOrangeMoneyStatus(tx.id, reference);
 
