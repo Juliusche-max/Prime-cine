@@ -6,20 +6,20 @@ const TITLE_ADMIN_SELECT = `
   episodes ( id, season_number, episode_number, title, synopsis, duration_minutes, thumbnail_url, video_url, release_date )
 `;
 
-export async function listTitlesForAdmin(search?: string) {
+export async function listTitlesForAdmin(search?: string): Promise<any[]> {
   const supabase = await createClient();
   let query = supabase.from("titles").select(TITLE_ADMIN_SELECT).order("created_at", { ascending: false });
   if (search) query = query.ilike("title", `%${search}%`);
   const { data, error } = await query;
   if (error) return [];
-  return data;
+  return (data ?? []) as any[];
 }
 
-export async function getTitleForAdmin(id: string) {
+export async function getTitleForAdmin(id: string): Promise<any> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("titles").select(TITLE_ADMIN_SELECT).eq("id", id).single();
   if (error) return null;
-  return data;
+  return data as any;
 }
 
 export async function listAllGenres() {
@@ -48,7 +48,7 @@ export async function listAdministrators() {
   return data;
 }
 
-export async function listCommentsForModeration(filter: "all" | "hidden" | "visible" = "all") {
+export async function listCommentsForModeration(filter: "all" | "hidden" | "visible" = "all"): Promise<any[]> {
   const supabase = await createClient();
   let query = supabase
     .from("comments")
@@ -59,17 +59,17 @@ export async function listCommentsForModeration(filter: "all" | "hidden" | "visi
   if (filter === "visible") query = query.eq("is_hidden", false);
   const { data, error } = await query;
   if (error) return [];
-  return data;
+  return (data ?? []) as any[];
 }
 
-export async function listBanners() {
+export async function listBanners(): Promise<any[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("banners")
     .select("*, titles ( title, slug )")
     .order("sort_order");
   if (error) return [];
-  return data;
+  return (data ?? []) as any[];
 }
 
 export async function getBanner(id: string) {
@@ -85,7 +85,7 @@ export async function listPlans() {
   return data;
 }
 
-export async function listUserSubscriptions() {
+export async function listUserSubscriptions(): Promise<any[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("user_subscriptions")
@@ -93,12 +93,11 @@ export async function listUserSubscriptions() {
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) return [];
-  return data;
+  return (data ?? []) as any[];
 }
 
 export async function listSentNotifications() {
   const supabase = await createClient();
-  // Group by (title, body, created_at) client-side since broadcasts insert one row per user.
   const { data, error } = await supabase
     .from("notifications")
     .select("id, title, body, link, created_at, user_id")
