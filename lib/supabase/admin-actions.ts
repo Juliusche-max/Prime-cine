@@ -17,12 +17,11 @@ async function requireStaff(minRole: "moderator" | "admin" | "super_admin" = "mo
   } = await supabase.auth.getUser();
   if (!user) return { supabase, ok: false as const, profile: null };
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const profile = profileData as any;
   const order = { moderator: 0, admin: 1, super_admin: 2 };
   const ok = !!profile && order[profile.role as keyof typeof order] >= order[minRole];
   return { supabase, ok, profile };
-}
-
 // ---------------------------------------------------------------------------
 // Titles (movies & series)
 // ---------------------------------------------------------------------------
