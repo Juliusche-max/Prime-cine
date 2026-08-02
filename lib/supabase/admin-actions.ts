@@ -22,6 +22,8 @@ async function requireStaff(minRole: "moderator" | "admin" | "super_admin" = "mo
   const order = { moderator: 0, admin: 1, super_admin: 2 };
   const ok = !!profile && order[profile.role as keyof typeof order] >= order[minRole];
   return { supabase, ok, profile };
+}
+
 // ---------------------------------------------------------------------------
 // Titles (movies & series)
 // ---------------------------------------------------------------------------
@@ -169,9 +171,6 @@ export async function promoteByEmailAction(formData: FormData): Promise<ActionRe
   const role = String(formData.get("role") ?? "moderator");
   if (!email) return { error: "Adresse email requise." };
 
-  // Profiles don't store email directly; look the user up via auth admin API
-  // is not available with the anon/server key, so we match on username as a
-  // fallback convention (username defaults to the email's local part at signup).
   const { data: candidates } = await supabase
     .from("profiles")
     .select("id, username, full_name")
@@ -303,7 +302,7 @@ export async function sendNotificationAction(formData: FormData): Promise<Action
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
   const link = String(formData.get("link") ?? "") || null;
-  const target = String(formData.get("target") ?? "all"); // "all" | username
+  const target = String(formData.get("target") ?? "all");
 
   if (!title) return { error: "Le titre de la notification est obligatoire." };
 
